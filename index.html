@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Quoteboard</title>
-<meta name="description" content="A market terminal in Apple's design language. Simulated demo by default, live US stock prices with your own Alpaca key.">
+<title>Trading Dojo</title>
+<meta name="description" content="A market terminal in Apple's design language: live US stock prices with your own Alpaca key, social chatter and hot options contracts.">
 <style>
 html{margin:0}body{margin:0}[hidden]{display:none!important}
 /* Layout: sticky glass toolbar, index strip, chart + heatmap column beside a watchlist rail. Dark-first, SF-style type, system colors. */
@@ -252,6 +252,14 @@ tbody tr:hover{background:var(--seg)}
 td b{font-size:14px} td small{display:block;color:var(--fg2);font-size:12px}
 td .spk{width:64px;max-width:64px;height:22px;display:inline-block;vertical-align:middle}
 
+.tools2{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tr-note{margin:0 0 12px;color:var(--fg2);font-size:12px;max-width:90ch}
+.ns{cursor:default!important}
+.mb{display:inline-block;width:56px;height:5px;border-radius:3px;background:var(--seg);margin-right:10px;vertical-align:middle;overflow:hidden}
+.mb i{display:block;height:100%;background:var(--blue);border-radius:3px}
+.cp{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:600}
+.cp.up{color:var(--up);background:rgb(var(--up-rgb)/.16)} .cp.dn{color:var(--down);background:rgb(var(--down-rgb)/.16)}
+.tr td .u{color:var(--fg3);font-size:12px;font-weight:400}
 footer{margin-top:20px;color:var(--fg2);font-size:12px;max-width:90ch}
 footer h3{margin:0 0 4px;font-size:13px;color:var(--fg)}
 footer p{margin:0 0 8px}
@@ -273,11 +281,12 @@ footer a:hover{text-decoration:underline}
 <header class="bar"><div class="bar-in">
   <div class="brand">
     <svg viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="6" fill="var(--blue)"/><path d="M5 15l4-4 3 3 5-6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Quoteboard</span>
+    <span>Trading Dojo</span>
   </div>
   <div class="seg" id="viewSeg" role="tablist" aria-label="View">
     <button role="tab" data-view="markets" aria-selected="true">Markets</button>
     <button role="tab" data-view="screener" aria-selected="false">Screener</button>
+    <button role="tab" data-view="trending" aria-selected="false">Trending</button>
   </div>
   <div class="cmd">
     <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -296,7 +305,7 @@ footer a:hover{text-decoration:underline}
 </div>
   <form id="liveForm" class="dlg" hidden autocomplete="off">
     <h3>Connect live data</h3>
-    <p>Quoteboard reads prices from your own Alpaca market-data account. Keys stay in this browser and go only to Alpaca. A free paper-trading key works, and it cannot move money.</p>
+    <p>Trading Dojo reads prices from your own Alpaca market-data account. Keys stay in this browser and go only to Alpaca. A free paper-trading key works, and it cannot move money.</p>
     <label>Key ID<input id="lkKey" type="text" spellcheck="false" autocomplete="off"></label>
     <label>Secret<input id="lkSec" type="password" autocomplete="off"></label>
     <label>Feed<select id="lkFeed"><option value="iex">IEX · real time, free plan</option><option value="sip">SIP · all exchanges, paid plan</option></select></label>
@@ -306,7 +315,7 @@ footer a:hover{text-decoration:underline}
 </header>
 
 <div class="wrap">
-<h1 class="sr">Quoteboard market terminal</h1>
+<h1 class="sr">Trading Dojo market terminal</h1>
 
 <section id="view-markets" aria-label="Markets">
   <div class="strip" id="strip"></div>
@@ -394,10 +403,55 @@ footer a:hover{text-decoration:underline}
   </div>
 </section>
 
+<section id="view-trending" aria-label="Trending" hidden>
+  <div class="col">
+    <section class="panel">
+      <div class="p-head"><h2>Trending on social</h2>
+        <div class="tools2"><span class="muted" id="trSocAge"></span><button class="btn" id="trRefresh" type="button">Refresh</button></div>
+      </div>
+      <p class="tr-note">Mentions over the last 24 hours, counted by ApeWisdom (mainly Reddit). This measures chatter, not direction or quality. Connect live data to see prices next to each ticker.</p>
+      <div class="tbl-wrap"><table class="tr"><thead><tr>
+        <th><button class="ns" type="button" tabindex="-1">#</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Symbol</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Mentions</button></th>
+        <th><button class="ns" type="button" tabindex="-1">vs 24h ago</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Rank move</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Upvotes</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Price</button></th>
+      </tr></thead><tbody id="trSocBody"></tbody></table></div>
+      <p class="empty" id="trSocMsg" hidden></p>
+    </section>
+    <section class="panel">
+      <div class="p-head"><h2>Hot options contracts</h2>
+        <div class="tools2"><span class="muted" id="trOptAge"></span>
+          <div class="seg sm" id="optSeg" role="tablist" aria-label="Options ranking">
+            <button role="tab" data-o="vol" aria-selected="true">Most active</button>
+            <button role="tab" data-o="unusual" aria-selected="false">Unusual</button>
+          </div>
+        </div>
+      </div>
+      <p class="tr-note">Social sites don't publish chatter by contract, so this lists the busiest contracts on the most-mentioned tickers. Most active ranks by volume today. Unusual keeps contracts trading at least as much as their open interest, with a minimum of 300 contracts. Quotes come from Cboe's public feed and run about 15 minutes behind.</p>
+      <div class="tbl-wrap"><table class="tr"><thead><tr>
+        <th><button class="ns" type="button" tabindex="-1">Contract</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Expires</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Last</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Change %</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Volume</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Open int.</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Vol / OI</button></th>
+        <th><button class="ns" type="button" tabindex="-1">IV</button></th>
+        <th><button class="ns" type="button" tabindex="-1">Delta</button></th>
+      </tr></thead><tbody id="trOptBody"></tbody></table></div>
+      <p class="empty" id="trOptMsg" hidden></p>
+    </section>
+  </div>
+</section>
+
 <footer>
   <h3>About this data</h3>
   <p id="about">Index levels start from reported closes: the S&amp;P 500 on Oct 6, 2026, the Nasdaq Composite and Dow derived from their Oct 5 closes and Oct 6 percentage moves, the Russell 2000 on Oct 1, and the 10-year yield on Oct 2. Company prices, volumes, the VIX, sector year-to-date figures other than Technology, Energy, Consumer Disc. and Utilities, and every tick are simulated. Do not trade on this page.</p>
-  <p>Sources: <a href="https://www.metatradingclub.com/2026/10/06/" target="_blank" rel="noopener">Meta Trading Club</a>, <a href="https://ts2.tech/en/sp-500-sets-record-but-fades-26-points-before-fed-minutes/" target="_blank" rel="noopener">TS2 Tech</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-02" target="_blank" rel="noopener">Tapeboard, Oct 2</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-01" target="_blank" rel="noopener">Tapeboard, Oct 1</a>.</p>
+  <p>The Trending view is not simulated. Social mentions come from ApeWisdom and options quotes from Cboe's public delayed feed.</p>
+  <p>Sources: <a href="https://apewisdom.io/" target="_blank" rel="noopener">ApeWisdom</a>, <a href="https://www.cboe.com/delayed_quotes/" target="_blank" rel="noopener">Cboe delayed quotes</a>, <a href="https://www.metatradingclub.com/2026/10/06/" target="_blank" rel="noopener">Meta Trading Club</a>, <a href="https://ts2.tech/en/sp-500-sets-record-but-fades-26-points-before-fed-minutes/" target="_blank" rel="noopener">TS2 Tech</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-02" target="_blank" rel="noopener">Tapeboard, Oct 2</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-01" target="_blank" rel="noopener">Tapeboard, Oct 1</a>.</p>
 </footer>
 </div>
 
@@ -505,8 +559,8 @@ IDXL.forEach(o=>{
 /* ---------- state ---------- */
 let sel='SPX',view='markets',range='1D',moverMode='up',secF='All',sortK='cap',sortD=-1,hovering=false;
 let WL=['AAPL','NVDA','MSFT','TSLA','AMZN','CEG','LLY','JPM'];
-try{const w=JSON.parse(localStorage.getItem('qb-wl')||'null');if(Array.isArray(w))WL=w.filter(x=>M[x])}catch(e){}
-const saveWL=()=>{try{localStorage.setItem('qb-wl',JSON.stringify(WL))}catch(e){}};
+try{const w=JSON.parse(localStorage.getItem('td-wl')||'null');if(Array.isArray(w))WL=w.filter(x=>M[x])}catch(e){}
+const saveWL=()=>{try{localStorage.setItem('td-wl',JSON.stringify(WL))}catch(e){}};
 
 /* ---------- sparkline ---------- */
 function spark(h,w,ht){
@@ -740,9 +794,10 @@ scrQ.addEventListener('input',renderTable);
 /* ---------- views, selection, events ---------- */
 function setView(v){
   view=v;
-  $('#view-markets').hidden=v!=='markets';$('#view-screener').hidden=v!=='screener';
+  $('#view-markets').hidden=v!=='markets';$('#view-screener').hidden=v!=='screener';$('#view-trending').hidden=v!=='trending';
   $$('#viewSeg button').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===v));
-  if(v==='screener')renderTable();else{layoutHeat();drawChart()}
+  if(v==='trending')startTrending();else stopTrending();
+  if(v==='screener')renderTable();else if(v==='markets'){layoutHeat();drawChart()}
 }
 function markSel(){
   $$('.card',strip).forEach(c=>c.classList.toggle('on',c.dataset.sym===sel));
@@ -781,7 +836,7 @@ function paintSg(){
 cmdEl.addEventListener('input',()=>{
   const q=cmdEl.value.trim().toLowerCase();if(!q){hideSg();return}
   const items=[];
-  [['markets','Markets','Overview'],['screener','Screener','Browse every stock']].forEach(([c,t,s])=>{if(c.startsWith(q))items.push({cmd:c,t,s})});
+  [['markets','Markets','Overview'],['screener','Screener','Browse every stock'],['trending','Trending','Social chatter and hot options']].forEach(([c,t,s])=>{if(c.startsWith(q))items.push({cmd:c,t,s})});
   ALL.filter(o=>o.sym.toLowerCase().startsWith(q)||o.name.toLowerCase().includes(q))
     .sort((a,b)=>(b.sym.toLowerCase()===q)-(a.sym.toLowerCase()===q)||(b.sym.toLowerCase().startsWith(q))-(a.sym.toLowerCase().startsWith(q)))
     .slice(0,6).forEach(o=>items.push({sym:o.sym,t:o.sym,s:o.name}));
@@ -827,7 +882,7 @@ function tick(){
 }
 function paint(){
   updStrip();renderQuote();renderWatch();renderMovers();renderSectors();updBreadth();
-  if(view==='markets'){paintHeat();if(!hovering)drawChart()}else renderTable();
+  if(view==='markets'){paintHeat();if(!hovering)drawChart()}else if(view==='screener')renderTable();
   markSel();
 }
 
@@ -835,7 +890,7 @@ function paint(){
 const LIVE={on:false,key:'',secret:'',feed:'iex'};
 let simTimer=null,liveTimer=null,pollBusy=false,fails=0;
 const ETFN={SPX:['SPY','S&P 500 ETF'],IXIC:['QQQ','Nasdaq-100 ETF'],DJI:['DIA','Dow Jones ETF'],RUT:['IWM','Russell 2000 ETF']};
-try{const c=JSON.parse(localStorage.getItem('qb-live')||'null');if(c&&c.key&&c.secret){LIVE.key=c.key;LIVE.secret=c.secret;LIVE.feed=c.feed==='sip'?'sip':'iex'}}catch(e){}
+try{const c=JSON.parse(localStorage.getItem('td-live')||'null');if(c&&c.key&&c.secret){LIVE.key=c.key;LIVE.secret=c.secret;LIVE.feed=c.feed==='sip'?'sip':'iex'}}catch(e){}
 const BARS=new Map(),PEND=new Set();
 const realSym=sym=>ETFN[sym]?ETFN[sym][0]:sym;
 async function api(path,params){
@@ -943,16 +998,154 @@ liveBtn.addEventListener('click',()=>{
   if(!liveForm.hidden){$('#lkKey').value=LIVE.key;$('#lkFeed').value=LIVE.feed;$('#lkKey').focus()}
 });
 $('#lkClose').addEventListener('click',()=>{liveForm.hidden=true;liveBtn.setAttribute('aria-expanded','false')});
-$('#lkOff').addEventListener('click',()=>{try{localStorage.removeItem('qb-live')}catch(e){}location.reload()});
+$('#lkOff').addEventListener('click',()=>{try{localStorage.removeItem('td-live')}catch(e){}location.reload()});
 liveForm.addEventListener('submit',e=>{
   e.preventDefault();
   const k=$('#lkKey').value.trim(),sec=$('#lkSec').value.trim()||LIVE.secret;
   if(!k||!sec){lkMsg('Enter both the key ID and the secret.',true);return}
   LIVE.key=k;LIVE.secret=sec;LIVE.feed=$('#lkFeed').value==='sip'?'sip':'iex';
-  try{localStorage.setItem('qb-live',JSON.stringify({key:LIVE.key,secret:LIVE.secret,feed:LIVE.feed}))}catch(err){}
+  try{localStorage.setItem('td-live',JSON.stringify({key:LIVE.key,secret:LIVE.secret,feed:LIVE.feed}))}catch(err){}
   $('#lkSec').value='';
   connect();
 });
+
+/* ---------- trending: social chatter and hot options ---------- */
+const TR={soc:null,opt:null,px:{},mode:'vol',timer:null,busy:{s:false,o:false},err:{s:'',o:''},tryS:0,tryO:0};
+async function getJ(url,file){
+  try{
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)throw new Error(String(r.status));
+    return {j:await r.json(),via:'direct',at:Date.now()};
+  }catch(e){
+    try{
+      const r=await fetch(file+'?t='+Date.now(),{cache:'no-store'});
+      if(!r.ok)throw new Error(String(r.status));
+      const j=await r.json(),at=j.fetched_at?Date.parse(j.fetched_at):0;
+      if(!at||Date.now()-at>3*3600e3)throw new Error('snapshot is stale');
+      return {j,via:'snapshot',at};
+    }catch(e2){throw new Error('direct '+e.message+', snapshot '+e2.message)}
+  }
+}
+const ago=t=>{const s=Math.max(0,Math.round((Date.now()-t)/1000));return s<60?s+' s ago':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago'};
+async function loadSocial(){
+  if(TR.busy.s)return;TR.busy.s=true;TR.tryS=Date.now();
+  try{
+    const {j,via,at}=await getJ('https://apewisdom.io/api/v1.0/filter/all-stocks/page/1','data/social.json');
+    const rows=(j.results||[]).slice(0,25);
+    if(!rows.length)throw new Error('empty result');
+    TR.soc={rows,via,at};TR.err.s='';
+    if(LIVE.on){
+      try{
+        const syms=rows.map(r=>r.ticker).filter(t=>/^[A-Z.]{1,6}$/.test(t));
+        const d=await api('/v2/stocks/snapshots',{symbols:syms.join(','),feed:LIVE.feed});
+        const data=d.snapshots||d;TR.px={};
+        for(const t in data){const sn=data[t];if(validSnap(sn))TR.px[t]={px:sn.latestTrade.p,chg:(sn.latestTrade.p/sn.prevDailyBar.c-1)*100}}
+      }catch(e){}
+    }
+  }catch(e){TR.err.s=e.message}
+  TR.busy.s=false;renderSocial();
+}
+async function loadOptions(){
+  if(TR.busy.o||!TR.soc)return;TR.busy.o=true;TR.tryO=Date.now();
+  try{
+    const cands=TR.soc.rows.map(r=>r.ticker).filter(t=>/^[A-Z]{1,5}$/.test(t)).slice(0,14);
+    const got=[];let i=0;
+    const worker=async()=>{
+      while(i<cands.length&&got.length<6){
+        const t=cands[i++];
+        try{const g=await getJ('https://cdn.cboe.com/api/global/delayed_quotes/options/'+t+'.json','data/options/'+t+'.json');got.push({t,...g})}catch(e){}
+      }
+    };
+    await Promise.all([worker(),worker(),worker()]);
+    got.sort((a,b)=>cands.indexOf(a.t)-cands.indexOf(b.t));
+    const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+    const rows=[];let via='direct',ts='',at=Date.now();
+    for(const g of got){
+      if(g.via==='snapshot'){via='snapshot';at=Math.min(at,g.at)}
+      ts=g.j.timestamp||ts;
+      const per=[];
+      for(const o of (g.j.data&&g.j.data.options)||[]){
+        const m=/^(.+?)(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/.exec(o.option||o.symbol||'');
+        if(!m||!(o.volume>0))continue;
+        const exp='20'+m[2]+'-'+m[3]+'-'+m[4];
+        if(exp<today)continue;
+        per.push({und:g.t,exp,type:m[5],strike:+m[6]/1000,last:o.last_trade_price,chg:o.percent_change,vol:o.volume,oi:o.open_interest,iv:o.iv,delta:o.delta});
+      }
+      per.sort((a,b)=>b.vol-a.vol);rows.push(...per.slice(0,60));
+    }
+    if(!rows.length)throw new Error('no contracts came back');
+    TR.opt={rows,via,at,ts,tickers:got.map(g=>g.t)};TR.err.o='';
+  }catch(e){TR.err.o=e.message}
+  TR.busy.o=false;renderOptions();
+}
+function renderSocial(){
+  const body=$('#trSocBody'),msg=$('#trSocMsg');
+  if(!TR.soc){
+    body.innerHTML='';msg.hidden=false;
+    msg.textContent=TR.err.s?'Could not load social data ('+TR.err.s+'). The source may block browser requests. Try Refresh in a minute.':'Loading social chatter…';
+    return;
+  }
+  msg.hidden=true;
+  const rows=TR.soc.rows,mx=Math.max(1,...rows.map(r=>r.mentions));
+  body.innerHTML=rows.map(r=>{
+    const dm=r.mentions_24h_ago>0?(r.mentions/r.mentions_24h_ago-1)*100:null;
+    const rk=r.rank_24h_ago?r.rank_24h_ago-r.rank:null;
+    const px=TR.px[r.ticker];
+    const attr=M[r.ticker]?` data-sym="${esc(r.ticker)}"`:'';
+    return `<tr${attr}><td>${r.rank}</td><td><b>${esc(r.ticker)}</b><small>${esc(r.name||'')}</small></td>`+
+      `<td><span class="mb"><i style="width:${(r.mentions/mx*100).toFixed(0)}%"></i></span>${f0.format(r.mentions)}</td>`+
+      `<td class="${dm==null?'':dm>=0?'up':'dn'}">${dm==null?'new':pct(dm)}</td>`+
+      `<td class="${rk==null?'':rk>0?'up':rk<0?'dn':''}">${rk==null?'new':rk>0?'▲ '+rk:rk<0?'▼ '+Math.abs(rk):'—'}</td>`+
+      `<td>${f0.format(r.upvotes||0)}</td>`+
+      `<td title="${LIVE.on?'':'Connect live data to see prices'}">${px?f2.format(px.px)+' <span class="'+(px.chg>=0?'up':'dn')+'">'+pct(px.chg)+'</span>':'—'}</td></tr>`;
+  }).join('');
+  renderAges();
+}
+function renderOptions(){
+  const body=$('#trOptBody'),msg=$('#trOptMsg');
+  if(!TR.opt){
+    body.innerHTML='';msg.hidden=false;
+    msg.textContent=TR.err.o?'Could not load options data ('+TR.err.o+'). The source may block browser requests. Try Refresh in a minute.':(TR.soc?'Loading options chains…':'Waiting for the social list…');
+    return;
+  }
+  msg.hidden=true;
+  let rows=TR.opt.rows.map(r=>({...r,ratio:r.oi>0?r.vol/r.oi:Infinity}));
+  if(TR.mode==='vol')rows.sort((a,b)=>b.vol-a.vol);
+  else rows=rows.filter(r=>r.vol>=300&&r.ratio>=1).sort((a,b)=>a.ratio===b.ratio?b.vol-a.vol:b.ratio-a.ratio);
+  rows=rows.slice(0,25);
+  if(!rows.length){body.innerHTML='';msg.hidden=false;msg.textContent='No contracts meet this filter right now.';renderAges();return}
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+  body.innerHTML=rows.map(r=>{
+    const d=new Date(r.exp+'T12:00:00'),dte=Math.round((new Date(r.exp+'T12:00:00')-new Date(today+'T12:00:00'))/864e5);
+    const call=r.type==='C',attr=M[r.und]?` data-sym="${esc(r.und)}"`:'';
+    return `<tr${attr}><td><b>${esc(r.und)} ${+r.strike.toFixed(3)}</b><span class="cp ${call?'up':'dn'}">${call?'Call':'Put'}</span></td>`+
+      `<td>${d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} <span class="u">${dte}d</span></td>`+
+      `<td>${r.last>0?f2.format(r.last):'—'}</td>`+
+      `<td class="${r.chg>=0?'up':'dn'}">${typeof r.chg==='number'&&r.last>0?pct(r.chg):'—'}</td>`+
+      `<td>${f0.format(r.vol)}</td><td>${f0.format(r.oi||0)}</td>`+
+      `<td>${r.ratio===Infinity?'new':r.ratio.toFixed(1)+'×'}</td>`+
+      `<td>${r.iv>0?(r.iv*100).toFixed(0)+'%':'—'}</td>`+
+      `<td>${typeof r.delta==='number'?r.delta.toFixed(2):'—'}</td></tr>`;
+  }).join('');
+  renderAges();
+}
+function renderAges(){
+  if(TR.soc)$('#trSocAge').textContent='Updated '+ago(TR.soc.at)+(TR.soc.via==='snapshot'?' · GitHub snapshot':'');
+  if(TR.opt)$('#trOptAge').textContent='About 15 min delayed · fetched '+ago(TR.opt.at)+(TR.opt.via==='snapshot'?' · GitHub snapshot':'')+' · '+TR.opt.tickers.join(', ');
+}
+function trTick(){
+  const now=Date.now();
+  if((!TR.soc||now-TR.soc.at>60000)&&now-TR.tryS>55000)loadSocial().then(()=>{if((!TR.opt||now-TR.opt.at>300000)&&Date.now()-TR.tryO>60000)loadOptions()});
+  else if((!TR.opt||now-TR.opt.at>300000)&&now-TR.tryO>60000)loadOptions();
+  renderAges();
+}
+function startTrending(){
+  stopTrending();renderSocial();renderOptions();
+  trTick();TR.timer=setInterval(trTick,15000);
+}
+function stopTrending(){if(TR.timer){clearInterval(TR.timer);TR.timer=null}}
+$('#trRefresh').addEventListener('click',()=>{TR.tryS=0;TR.tryO=0;loadSocial().then(loadOptions)});
+$('#optSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;TR.mode=b.dataset.o;$$('#optSeg button').forEach(x=>x.setAttribute('aria-selected',x===b));renderOptions()});
 
 /* ---------- boot ---------- */
 new ResizeObserver(()=>{if(view==='markets')drawChart()}).observe($('#chart'));
