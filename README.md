@@ -4,6 +4,7 @@ A market terminal in Apple's design language. One static `index.html`, no build 
 
 - **Markets:** index strip, interactive chart, cap-weighted heatmap, sector bars, watchlist, movers.
 - **Screener:** sortable, filterable table of the 100 largest US companies.
+- **Stock detail:** click any ticker for its own page (`#NVDA` deep links work): price and chart, key statistics, options activity from the snapshot, social buzz, same-sector stocks, and news (live mode). P/E, dividend yield, analyst ratings and earnings are not shown because there is no free source wired in.
 - **Trending:** stocks trending on social media (mentions counted by [ApeWisdom](https://apewisdom.io/), mainly Reddit) and the 40 highest-volume options contracts across the most heavily traded underlyings plus the social tickers (Cboe's public delayed quotes, about 15 minutes behind). Ranked by volume only, any expiry, so long-dated contracts count.
 
 ## Data modes

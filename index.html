@@ -260,6 +260,14 @@ td .spk{width:64px;max-width:64px;height:22px;display:inline-block;vertical-alig
 .cp{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:600}
 .cp.up{color:var(--up);background:rgb(var(--up-rgb)/.16)} .cp.dn{color:var(--down);background:rgb(var(--down-rgb)/.16)}
 .tr td .u{color:var(--fg3);font-size:12px;font-weight:400}
+.dback{margin-bottom:12px}
+#view-detail .stats{display:none}
+.kstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0 36px;margin:0}
+.kstats.one{grid-template-columns:1fr}
+.kstats div{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.kstats dt{color:var(--fg2)} .kstats dd{margin:0;font-weight:600;text-align:right}
+.wire p a.hl{color:var(--fg);font-size:inherit}
+.wire p a.hl:hover{color:var(--blue)}
 footer{margin-top:20px;color:var(--fg2);font-size:12px;max-width:90ch}
 footer h3{margin:0 0 4px;font-size:13px;color:var(--fg)}
 footer p{margin:0 0 8px}
@@ -448,6 +456,46 @@ footer a:hover{text-decoration:underline}
   </div>
 </section>
 
+<section id="view-detail" aria-label="Stock details" hidden>
+  <div class="dback"><button class="btn" id="backBtn" type="button">← Back</button></div>
+  <div class="grid">
+    <div class="col" id="detailMain">
+      <section class="panel">
+        <div class="p-head"><h2>Key statistics</h2></div>
+        <dl class="kstats" id="kStats"></dl>
+        <p class="note">Price-to-earnings, dividend yield, analyst ratings and earnings need a fundamentals source and are not shown. 52-week range and average volume appear once live data is connected.</p>
+      </section>
+      <section class="panel">
+        <div class="p-head"><h2>Options activity</h2><span class="muted">Highest volume today, about 15 min delayed</span></div>
+        <div class="tbl-wrap"><table class="tr"><thead><tr>
+          <th><button class="ns" type="button" tabindex="-1">Strike</button></th>
+          <th><button class="ns" type="button" tabindex="-1">Expires</button></th>
+          <th><button class="ns" type="button" tabindex="-1">Last</button></th>
+          <th><button class="ns" type="button" tabindex="-1">Volume</button></th>
+          <th><button class="ns" type="button" tabindex="-1">Open int.</button></th>
+          <th><button class="ns" type="button" tabindex="-1">IV</button></th>
+          <th><button class="ns" type="button" tabindex="-1">Delta</button></th>
+        </tr></thead><tbody id="dOptBody"></tbody></table></div>
+        <p class="empty" id="dOptMsg" hidden></p>
+      </section>
+      <section class="panel">
+        <div class="p-head"><h2>News</h2></div>
+        <ul class="wire" id="dNewsList"></ul>
+      </section>
+    </div>
+    <aside class="col">
+      <section class="panel">
+        <div class="p-head"><h2>Social buzz</h2></div>
+        <div id="dSocial"></div>
+      </section>
+      <section class="panel">
+        <div class="p-head"><h2 id="dRelH">Related stocks</h2></div>
+        <ul class="rows" id="dRelated"></ul>
+      </section>
+    </aside>
+  </div>
+</section>
+
 <footer>
   <h3>About this data</h3>
   <p id="about">Index levels start from reported closes: the S&amp;P 500 on Oct 6, 2026, the Nasdaq Composite and Dow derived from their Oct 5 closes and Oct 6 percentage moves, the Russell 2000 on Oct 1, and the 10-year yield on Oct 2. Company prices (starting from real Oct 12, 2026 quotes, then moved by simulation), market caps from that same snapshot, volumes, the VIX, sector year-to-date figures other than Technology, Energy, Consumer Disc. and Utilities, and every tick are simulated. Do not trade on this page.</p>
@@ -601,7 +649,7 @@ function renderQuote(){
   $('#qSym').textContent=o.tag||o.sym;
   $('#qName').textContent=o.name;
   $('#qPx').textContent=pxF(o);
-  $('#qPill').innerHTML=pill(o)+` <span class="muted" style="font-size:12px;margin-left:4px">Today</span>`;
+  $('#qPill').innerHTML=(o.kind==='stock'?`<span class="${dir(o)}" style="font-weight:600">${sgn(o.d)}$${f2.format(Math.abs(o.d))}</span> `:'')+pill(o)+` <span class="muted" style="font-size:12px;margin-left:4px">Today</span>`;
   const cs=b=>LIVE.on?'≈'+capF(b):capF(b);
   $('#qSub').textContent=o.kind==='stock'?`${o.sec} · ${cs(o.cap)} market cap`:`${LIVE.on?'ETF':'Index'} · ${o.src}`;
   const ytd=LIVE.on?[]:[['YTD',pct(o.ret.YTD*100)]];
@@ -794,12 +842,23 @@ $('#chips').addEventListener('click',e=>{
 scrQ.addEventListener('input',renderTable);
 
 /* ---------- views, selection, events ---------- */
+const quote=$('#quote'),quoteHome=quote.parentNode,quoteNext=quote.nextElementSibling;
+function goStock(sym){if(decodeURIComponent(location.hash.slice(1))===sym)route();else location.hash=sym}
+function route(){
+  const h=decodeURIComponent(location.hash.slice(1)),o=M[h];
+  if(o&&o.kind==='stock'){sel=h;setView('detail');window.scrollTo(0,0);markSel()}
+  else if(view==='detail')setView('markets');
+}
+window.addEventListener('hashchange',route);
 function setView(v){
   view=v;
-  $('#view-markets').hidden=v!=='markets';$('#view-screener').hidden=v!=='screener';$('#view-trending').hidden=v!=='trending';
-  $$('#viewSeg button').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===v));
+  $('#view-markets').hidden=v!=='markets';$('#view-screener').hidden=v!=='screener';$('#view-trending').hidden=v!=='trending';$('#view-detail').hidden=v!=='detail';
+  if(v==='detail')$('#detailMain').prepend(quote);else if(quote.parentNode!==quoteHome)quoteHome.insertBefore(quote,quoteNext);
+  if(v!=='detail')document.title='Trading Dojo';
+  $$('#viewSeg button').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===(v==='detail'?'markets':v)));
   if(v==='trending')startTrending();else stopTrending();
   if(v==='screener')renderTable();else if(v==='markets'){layoutHeat();drawChart()}
+  else if(v==='detail'){renderQuote();drawChart();renderDetail()}
 }
 function markSel(){
   $$('.card',strip).forEach(c=>c.classList.toggle('on',c.dataset.sym===sel));
@@ -807,6 +866,7 @@ function markSel(){
 }
 function select(sym){
   if(!M[sym])return;
+  if(M[sym].kind==='stock'){goStock(sym);return}
   sel=sym;
   if(view!=='markets'){setView('markets');window.scrollTo(0,0)}
   renderQuote();drawChart();markSel();renderWatch();renderMovers();
@@ -885,6 +945,7 @@ function tick(){
 function paint(){
   updStrip();renderQuote();renderWatch();renderMovers();renderSectors();updBreadth();
   if(view==='markets'){paintHeat();if(!hovering)drawChart()}else if(view==='screener')renderTable();
+  else if(view==='detail'){if(!hovering)drawChart();renderKStats();renderRelated()}
   markSel();
 }
 
@@ -948,6 +1009,7 @@ function enterLive(data){
   $('#liveBtn').textContent='Live settings';
   liveTimer=setInterval(pollLive,1000);
   paint();
+  if(view==='detail')renderDetail();
 }
 async function connect(){
   lkMsg('Connecting…');
@@ -980,7 +1042,7 @@ async function loadBars(sym,rg){
   const dk=b=>new Date(b.t).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   if(rg==='1D'&&bars.length){const last=dk(bars[bars.length-1]);bars=bars.filter(b=>dk(b)===last)}
   if(rg==='5D'&&bars.length){const ds=[...new Set(bars.map(dk))].slice(-5);bars=bars.filter(b=>ds.includes(dk(b)))}
-  BARS.set(sym+'|'+rg,{t:bars.map(b=>new Date(b.t)),c:bars.map(b=>b.c),at:Date.now()});
+  BARS.set(sym+'|'+rg,{t:bars.map(b=>new Date(b.t)),c:bars.map(b=>b.c),h:bars.map(b=>b.h),l:bars.map(b=>b.l),v:bars.map(b=>b.v),at:Date.now()});
 }
 function liveSeries(o){
   const key=o.sym+'|'+range,c=BARS.get(key),ttl=range==='1D'?15000:120000;
@@ -1046,7 +1108,7 @@ async function loadSocial(){
       }catch(e){}
     }
   }catch(e){TR.err.s=e.message}
-  TR.busy.s=false;renderSocial();
+  TR.busy.s=false;renderSocial();renderDetailSocial();
 }
 async function loadOptions(){
   if(TR.busy.o)return;TR.busy.o=true;TR.tryO=Date.now();
@@ -1067,7 +1129,7 @@ async function loadOptions(){
     if(!rows.length)throw new Error('no contracts in the snapshot');
     TR.opt={rows,at,ts:j.timestamp||'',n:new Set(rows.map(r=>r.und)).size};TR.err.o='';
   }catch(e){TR.err.o=e.message}
-  TR.busy.o=false;renderOptions();
+  TR.busy.o=false;renderOptions();renderDetailOptions();
 }
 function renderSocial(){
   const body=$('#trSocBody'),msg=$('#trSocMsg');
@@ -1135,14 +1197,91 @@ function stopTrending(){if(TR.timer){clearInterval(TR.timer);TR.timer=null}}
 $('#trRefresh').addEventListener('click',()=>{TR.tryS=0;TR.tryO=0;loadSocial().then(loadOptions)});
 $('#optSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;TR.mode=b.dataset.o;$$('#optSeg button').forEach(x=>x.setAttribute('aria-selected',x===b));renderOptions()});
 
+/* ---------- stock detail page ---------- */
+const NEWS=new Map();
+function renderKStats(){
+  const o=M[sel];if(!o||o.kind!=='stock')return;
+  const b=LIVE.on?BARS.get(o.sym+'|1Y'):null,has=!!(b&&b.h&&b.h.length);
+  const dash='—';
+  const hi52=has?f2.format(Math.max(...b.h,o.px)):dash,lo52=has?f2.format(Math.min(...b.l,o.px)):dash;
+  let av=dash;
+  if(has){const v=b.v.slice(-30);av=volF(v.reduce((a,x)=>a+x,0)/v.length/1e6)}
+  const sfx=LIVE.on&&LIVE.feed==='iex'?' (IEX)':'';
+  const rank=stocks.slice().sort((a,c)=>c.cap0-a.cap0).findIndex(x=>x.sym===o.sym)+1;
+  const rows=[['Market cap',(LIVE.on?'≈':'')+capF(o.cap)],['Open price',f2.format(o.open)],['High today',f2.format(o.hi)],['Low today',f2.format(o.lo)],['Volume'+sfx,volF(o.volM)],['52 week high',hi52],['52 week low',lo52],['Avg. volume'+sfx,av],['Previous close',f2.format(o.prev)],['Sector',esc(o.sec)],['Size rank','#'+rank+' of '+stocks.length]];
+  $('#kStats').innerHTML=rows.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+function renderDetailOptions(){
+  if(view!=='detail')return;
+  const body=$('#dOptBody'),msg=$('#dOptMsg');
+  if(!TR.opt){body.innerHTML='';msg.hidden=false;msg.textContent=TR.err.o?'Options snapshot unavailable ('+TR.err.o+').':'Loading options…';return}
+  const rows=TR.opt.rows.filter(r=>r.und===sel).sort((a,b)=>b.vol-a.vol).slice(0,10);
+  if(!rows.length){body.innerHTML='';msg.hidden=false;msg.textContent='No contracts for '+sel+' in the latest snapshot, which covers '+TR.opt.n+' heavily traded underlyings.';return}
+  msg.hidden=true;
+  body.innerHTML=rows.map(r=>{
+    const d=new Date(r.exp+'T12:00:00'),call=r.type==='C';
+    return `<tr><td><b>${+r.strike.toFixed(3)}</b><span class="cp ${call?'up':'dn'}">${call?'Call':'Put'}</span></td><td>${d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td><td>${r.last>0?f2.format(r.last):'—'}</td><td>${f0.format(r.vol)}</td><td>${f0.format(r.oi||0)}</td><td>${r.iv>0?(r.iv*100).toFixed(0)+'%':'—'}</td><td>${typeof r.delta==='number'?r.delta.toFixed(2):'—'}</td></tr>`;
+  }).join('');
+}
+function renderDetailSocial(){
+  if(view!=='detail')return;
+  const box=$('#dSocial');
+  if(!TR.soc){box.innerHTML=`<p class="empty">${TR.err.s?'Social data unavailable.':'Loading…'}</p>`;return}
+  const r=TR.soc.rows.find(x=>x.ticker===sel);
+  if(!r){box.innerHTML=`<p class="empty">${esc(sel)} is not among the ${TR.soc.rows.length} most-mentioned tickers right now.</p>`;return}
+  const dm=r.mentions_24h_ago>0?(r.mentions/r.mentions_24h_ago-1)*100:null,rk=r.rank_24h_ago?r.rank_24h_ago-r.rank:null;
+  box.innerHTML=`<dl class="kstats one"><div><dt>Social rank</dt><dd>#${r.rank}</dd></div><div><dt>Mentions, 24h</dt><dd>${f0.format(r.mentions)}</dd></div><div><dt>vs 24h ago</dt><dd class="${dm==null?'':dm>=0?'up':'dn'}">${dm==null?'new':pct(dm)}</dd></div><div><dt>Rank move</dt><dd class="${rk==null?'':rk>0?'up':rk<0?'dn':''}">${rk==null?'new':rk>0?'▲ '+rk:rk<0?'▼ '+Math.abs(rk):'—'}</dd></div><div><dt>Upvotes</dt><dd>${f0.format(r.upvotes||0)}</dd></div></dl>`;
+}
+function renderRelated(){
+  if(view!=='detail')return;
+  const o=M[sel];if(!o||o.kind!=='stock')return;
+  const peers=stocks.filter(x=>x.sec===o.sec&&x.sym!==o.sym).sort((a,b)=>Math.abs(a.cap0-o.cap0)-Math.abs(b.cap0-o.cap0)).slice(0,6);
+  $('#dRelH').textContent='More in '+o.sec;
+  $('#dRelated').innerHTML=peers.length?peers.map(rowHtml).join(''):'<li class="empty">No other stocks in this sector.</li>';
+}
+function renderNews(){
+  if(view!=='detail')return;
+  const box=$('#dNewsList');
+  if(!LIVE.on){box.innerHTML='<li class="empty">Connect live data to see news for this stock.</li>';return}
+  const c=NEWS.get(sel),k='n'+sel;
+  if((!c||Date.now()-c.at>120000)&&!PEND.has(k)){
+    PEND.add(k);
+    api('/v1beta1/news',{symbols:sel,limit:8,sort:'desc'})
+      .then(j=>NEWS.set(sel,{at:Date.now(),items:j.news||[]}))
+      .catch(e=>NEWS.set(sel,{at:Date.now(),items:[],err:e.message}))
+      .then(()=>{PEND.delete(k);renderNews()});
+  }
+  if(!c){box.innerHTML='<li class="empty">Loading news…</li>';return}
+  if(c.err){box.innerHTML=`<li class="empty">News unavailable (${esc(c.err)}).</li>`;return}
+  if(!c.items.length){box.innerHTML='<li class="empty">No recent news for this stock.</li>';return}
+  box.innerHTML=c.items.map(n=>{
+    const u=(n.url||'').startsWith('https://')?n.url:null,t=Date.parse(n.created_at);
+    return `<li><time>${esc(n.source||'')}${t?' · '+ago(t):''}</time><p>${u?`<a class="hl" href="${esc(u)}" target="_blank" rel="noopener">${esc(n.headline||'')}</a>`:esc(n.headline||'')}</p></li>`;
+  }).join('');
+}
+function renderDetail(){
+  const o=M[sel];if(!o||o.kind!=='stock')return;
+  document.title=o.sym+' · Trading Dojo';
+  renderKStats();renderRelated();renderNews();renderDetailOptions();renderDetailSocial();
+  const k=o.sym+'|1Y';
+  if(LIVE.on&&!BARS.has(k)&&!PEND.has(k)){
+    PEND.add(k);
+    loadBars(o.sym,'1Y').then(()=>{PEND.delete(k);renderKStats()}).catch(e=>{PEND.delete(k);BARS.set(k,{t:[],c:[],at:Date.now(),err:e.message})});
+  }
+  if(!TR.opt&&Date.now()-TR.tryO>60000)loadOptions();
+  if(!TR.soc&&Date.now()-TR.tryS>55000)loadSocial();
+}
+$('#backBtn').addEventListener('click',()=>{location.hash=''});
+
 /* ---------- boot ---------- */
-new ResizeObserver(()=>{if(view==='markets')drawChart()}).observe($('#chart'));
+new ResizeObserver(()=>{if(view==='markets'||view==='detail')drawChart()}).observe($('#chart'));
 let lastW=0;
 new ResizeObserver(()=>{const w=heat.clientWidth;if(view==='markets'&&w&&w!==lastW){lastW=w;layoutHeat()}}).observe(heat);
 clock();setInterval(clock,1000);
 layoutHeat();
 paint();
 simTimer=setInterval(tick,1200);
+route();
 if(LIVE.key&&LIVE.secret)connect();
 })();
 </script>
