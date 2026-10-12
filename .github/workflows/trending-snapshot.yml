@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/**
+      - .github/workflows/trending-snapshot.yml
 permissions:
   contents: write
   pages: write
