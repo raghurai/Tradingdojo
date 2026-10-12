@@ -3,7 +3,7 @@
 A market terminal in Apple's design language. One static `index.html`, no build step.
 
 - **Markets:** index strip, interactive chart, cap-weighted heatmap, sector bars, watchlist, movers.
-- **Screener:** sortable, filterable table of ~90 large US stocks.
+- **Screener:** sortable, filterable table of the 100 largest US companies.
 - **Trending:** stocks trending on social media (mentions counted by [ApeWisdom](https://apewisdom.io/), mainly Reddit) and the busiest options contracts on those tickers (Cboe's public delayed quotes, about 15 minutes behind). Ranked by volume, or by volume against open interest ("unusual").
 
 ## Data modes

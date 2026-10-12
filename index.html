@@ -449,9 +449,9 @@ footer a:hover{text-decoration:underline}
 
 <footer>
   <h3>About this data</h3>
-  <p id="about">Index levels start from reported closes: the S&amp;P 500 on Oct 6, 2026, the Nasdaq Composite and Dow derived from their Oct 5 closes and Oct 6 percentage moves, the Russell 2000 on Oct 1, and the 10-year yield on Oct 2. Company prices, volumes, the VIX, sector year-to-date figures other than Technology, Energy, Consumer Disc. and Utilities, and every tick are simulated. Do not trade on this page.</p>
+  <p id="about">Index levels start from reported closes: the S&amp;P 500 on Oct 6, 2026, the Nasdaq Composite and Dow derived from their Oct 5 closes and Oct 6 percentage moves, the Russell 2000 on Oct 1, and the 10-year yield on Oct 2. Company prices (starting from real Oct 12, 2026 quotes, then moved by simulation), market caps from that same snapshot, volumes, the VIX, sector year-to-date figures other than Technology, Energy, Consumer Disc. and Utilities, and every tick are simulated. Do not trade on this page.</p>
   <p>The Trending view is not simulated. Social mentions come from ApeWisdom and options quotes from Cboe's public delayed feed.</p>
-  <p>Sources: <a href="https://apewisdom.io/" target="_blank" rel="noopener">ApeWisdom</a>, <a href="https://www.cboe.com/delayed_quotes/" target="_blank" rel="noopener">Cboe delayed quotes</a>, <a href="https://www.metatradingclub.com/2026/10/06/" target="_blank" rel="noopener">Meta Trading Club</a>, <a href="https://ts2.tech/en/sp-500-sets-record-but-fades-26-points-before-fed-minutes/" target="_blank" rel="noopener">TS2 Tech</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-02" target="_blank" rel="noopener">Tapeboard, Oct 2</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-01" target="_blank" rel="noopener">Tapeboard, Oct 1</a>.</p>
+  <p>Sources: <a href="https://companiesmarketcap.com/usa/largest-companies-in-the-usa-by-market-cap/" target="_blank" rel="noopener">CompaniesMarketCap</a> (stock list, caps, base prices), <a href="https://apewisdom.io/" target="_blank" rel="noopener">ApeWisdom</a>, <a href="https://www.cboe.com/delayed_quotes/" target="_blank" rel="noopener">Cboe delayed quotes</a>, <a href="https://www.metatradingclub.com/2026/10/06/" target="_blank" rel="noopener">Meta Trading Club</a>, <a href="https://ts2.tech/en/sp-500-sets-record-but-fades-26-points-before-fed-minutes/" target="_blank" rel="noopener">TS2 Tech</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-02" target="_blank" rel="noopener">Tapeboard, Oct 2</a>, <a href="https://tapeboard.com/blog/market-pulse-2026-10-01" target="_blank" rel="noopener">Tapeboard, Oct 1</a>.</p>
 </footer>
 </div>
 
@@ -483,17 +483,17 @@ const pill=(o,cls='')=>`<span class="pill ${dir(o)} ${cls}">${o.chg>=0?'▲':'�
 const SEC=['Technology','Communication','Consumer Disc.','Staples','Financials','Health Care','Industrials','Energy','Utilities','Real Estate','Materials'];
 const YTD={Technology:38.47,Energy:37.61,'Consumer Disc.':-7.02,Utilities:-7.76,Communication:21.4,Financials:9.6,'Health Care':2.1,Industrials:15.2,Staples:1.8,'Real Estate':-1.4,Materials:6.3};
 const RAW={
-Technology:[['NVDA','NVIDIA',218,5300],['AAPL','Apple',262,3900],['MSFT','Microsoft',540,4000],['AVGO','Broadcom',380,1800],['ORCL','Oracle',240,680],['PLTR','Palantir',170,400],['AMD','Advanced Micro Devices',205,330],['CRM','Salesforce',250,240],['CSCO','Cisco',78,310],['IBM','IBM',290,270],['NOW','ServiceNow',900,185],['QCOM','Qualcomm',170,185],['MU','Micron',150,170],['INTC','Intel',38,170],['TXN','Texas Instruments',185,170],['ADBE','Adobe',340,150],['AMAT','Applied Materials',190,150],['ANET','Arista Networks',130,160]],
-Communication:[['GOOGL','Alphabet',260,3200],['META','Meta Platforms',740,1850],['NFLX','Netflix',1200,520],['TMUS','T-Mobile US',240,270],['DIS','Walt Disney',115,210],['T','AT&T',27,190],['VZ','Verizon',42,175],['CMCSA','Comcast',30,115]],
-'Consumer Disc.':[['AMZN','Amazon',230,2450],['TSLA','Tesla',430,1400],['HD','Home Depot',380,380],['MCD',"McDonald's",300,215],['BKNG','Booking Holdings',5400,175],['TJX','TJX Companies',140,155],['LOW',"Lowe's",240,135],['NKE','Nike',70,105],['SBUX','Starbucks',85,95]],
-Staples:[['WMT','Walmart',105,840],['COST','Costco',900,400],['PG','Procter & Gamble',155,365],['KO','Coca-Cola',68,295],['PEP','PepsiCo',145,200],['PM','Philip Morris',160,250],['MDLZ','Mondelez',62,80],['CL','Colgate-Palmolive',85,70]],
-Financials:[['BRK.B','Berkshire Hathaway',500,1080],['JPM','JPMorgan Chase',300,830],['V','Visa',340,650],['MA','Mastercard',570,520],['BAC','Bank of America',52,390],['WFC','Wells Fargo',82,270],['GS','Goldman Sachs',760,235],['MS','Morgan Stanley',150,240],['AXP','American Express',330,230],['BLK','BlackRock',1100,170]],
-'Health Care':[['LLY','Eli Lilly',820,780],['JNJ','Johnson & Johnson',180,435],['UNH','UnitedHealth',330,300],['ABBV','AbbVie',205,365],['MRK','Merck',85,215],['TMO','Thermo Fisher',540,205],['ABT','Abbott',130,225],['PFE','Pfizer',26,150],['AMGN','Amgen',300,160],['ISRG','Intuitive Surgical',470,170]],
-Industrials:[['GE','GE Aerospace',300,320],['CAT','Caterpillar',480,225],['RTX','RTX',160,215],['HON','Honeywell',210,135],['UNP','Union Pacific',235,140],['BA','Boeing',215,160],['DE','Deere',470,128],['LMT','Lockheed Martin',480,112],['UPS','UPS',95,80]],
-Energy:[['XOM','Exxon Mobil',125,540],['CVX','Chevron',165,330],['COP','ConocoPhillips',100,125],['SLB','Schlumberger',40,55],['EOG','EOG Resources',120,65],['OXY','Occidental Petroleum',50,47]],
-Utilities:[['NEE','NextEra Energy',85,175],['CEG','Constellation Energy',380,120],['SO','Southern Company',92,100],['DUK','Duke Energy',120,95],['VST','Vistra',190,65]],
-'Real Estate':[['PLD','Prologis',115,110],['AMT','American Tower',190,90],['EQIX','Equinix',800,78],['O','Realty Income',58,52]],
-Materials:[['LIN','Linde',460,220],['SHW','Sherwin-Williams',350,88],['FCX','Freeport-McMoRan',45,65],['NEM','Newmont',80,88]]
+Technology:[['NVDA','NVIDIA',229.28,5536],['AAPL','Apple',336.64,4912],['MSFT','Microsoft',535.07,3973],['AVGO','Broadcom',361.54,1725],['MU','Micron Technology',1029,1164],['AMD','Advanced Micro Devices',608.10,992.7],['INTC','Intel',104.70,553.45],['PLTR','Palantir',209.05,502.35],['CSCO','Cisco',118.39,466.76],['ORCL','Oracle',141.40,428.65],['AMAT','Applied Materials',507.03,402.37],['LRCX','Lam Research',318.84,399.00],['DELL','Dell Technologies',586.06,372.62],['PANW','Palo Alto Networks',418.78,342.56],['CRWD','CrowdStrike',275.04,281.62],['ANET','Arista Networks',216.74,273.35],['TXN','Texas Instruments',283.74,259.12],['KLAC','KLA',195.57,255.22],['MRVL','Marvell Technology',275.28,247.39],['SNDK','Sandisk',1582,228.61],['APH','Amphenol',87.24,215.13],['IBM','IBM',227.13,213.98],['ADI','Analog Devices',406.19,196.82],['CRM','Salesforce',229.13,188.57],['QCOM','Qualcomm',175.50,187.40],['WDC','Western Digital',397.28,148.71],['NOW','ServiceNow',140.86,145.62],['FTNT','Fortinet',194.75,142.89],['GLW','Corning',156.68,134.68],['SNOW','Snowflake',368.89,130.14],['NET','Cloudflare',360.93,128.51]],
+Communication:[['GOOG','Alphabet',347.86,4254],['META','Meta Platforms',718.67,1830],['NFLX','Netflix',70.30,292.72],['DIS','Walt Disney',108.05,186.56],['VZ','Verizon',41.65,173.04],['TMUS','T-Mobile US',148.58,159.37],['T','AT&T',22.18,151.98]],
+'Consumer Disc.':[['AMZN','Amazon',262.43,2830],['TSLA','Tesla',382.70,1511],['HD','Home Depot',290.74,290.06],['MCD',"McDonald's",235.23,166.45],['TJX','TJX Companies',138.76,153.28],['BKNG','Booking Holdings',160.34,124.24]],
+Staples:[['WMT','Walmart',111.35,883.42],['COST','Costco',946.92,419.60],['KO','Coca-Cola',88.05,378.83],['PG','Procter & Gamble',151.23,351.52],['PM','Philip Morris',201.19,313.57],['PEP','PepsiCo',125.97,171.66]],
+Financials:[['BRK.B','Berkshire Hathaway',515.62,1103],['JPM','JPMorgan Chase',332.99,885.14],['V','Visa',385.45,723.62],['MA','Mastercard',589.14,516.09],['BAC','Bank of America',54.32,379.84],['MS','Morgan Stanley',190.02,298.43],['GS','Goldman Sachs',895.32,260.69],['WFC','Wells Fargo',83.55,252.65],['C','Citigroup',129.64,217.46],['AXP','American Express',308.17,208.11],['BLK','BlackRock',1082,175.86],['SCHW','Charles Schwab',96.70,167.22],['IBKR','Interactive Brokers',87.87,149.71],['BX','Blackstone',114.29,136.61],['PGR','Progressive',217.43,126.19],['COF','Capital One',199.26,122.24]],
+'Health Care':[['LLY','Eli Lilly',1179,1051],['JNJ','Johnson & Johnson',261.44,630.04],['ABBV','AbbVie',276.47,488.55],['MRK','Merck',145.60,359.22],['UNH','UnitedHealth',379.30,340.45],['TMO','Thermo Fisher',658.02,243.30],['AMGN','Amgen',414.87,224.29],['GILD','Gilead Sciences',151.17,187.44],['ABT','Abbott',99.60,173.48],['PFE','Pfizer',28.28,161.18],['DHR','Danaher',219.81,154.52],['ISRG','Intuitive Surgical',423.96,149.77],['VRTX','Vertex Pharmaceuticals',510.08,129.20],['BMY','Bristol-Myers Squibb',59.12,120.76]],
+Industrials:[['SPCX','SpaceX',162.57,2141],['GE','GE Aerospace',308.20,319.77],['CAT','Caterpillar',800.47,367.95],['GEV','GE Vernova',1005,267.59],['RTX','RTX',185.97,250.64],['UNP','Union Pacific',278.34,165.35],['DE','Deere',620.93,167.41],['BA','Boeing',190.37,150.35],['PH','Parker-Hannifin',962.56,121.39],['UBER','Uber',71.51,146.06]],
+Energy:[['XOM','Exxon Mobil',168.94,694.66],['CVX','Chevron',211.98,415.82],['COP','ConocoPhillips',134.10,161.09],['MPC','Marathon Petroleum',455.03,132.83],['VLO','Valero Energy',433.75,124.88]],
+Utilities:[['NEE','NextEra Energy',77.38,161.38]],
+'Real Estate':[['WELL','Welltower',225.47,162.46],['PLD','Prologis',129.49,125.87]],
+Materials:[['SCCO','Southern Copper',209.21,176.64],['NEM','Newmont',117.84,124.16]]
 };
 const DVOL={Technology:1.6,Communication:1.3,'Consumer Disc.':1.4,Staples:0.8,Financials:1.1,'Health Care':1.1,Industrials:1.1,Energy:1.4,Utilities:1.0,'Real Estate':1.1,Materials:1.2};
 
@@ -515,7 +515,7 @@ const stocks=[];
 SEC.forEach(sec=>RAW[sec].forEach(([sym,name,ref,cap])=>{
   const dv=DVOL[sec]*(0.7+R()*0.7);
   const chg=clamp(secBias[sec]+gauss(R)*dv*0.9,-6,6);
-  const o={sym,name,sec,kind:'stock',prev:ref,cap,dv,chg,px:ref*(1+chg/100),volM:Math.max(1.2,Math.pow(cap,0.55)*(0.5+R())*0.9)};
+  const o={sym,name,sec,kind:'stock',prev:ref,cap,cap0:cap,px0:ref,dv,chg,px:ref*(1+chg/100),volM:Math.max(1.2,Math.pow(cap,0.55)*(0.5+R())*0.9)};
   o.d=o.px-o.prev;
   o.ret=mkRet(sym,YTD[sec]+gauss(R)*15);
   o.hist=genPath(60,o.prev,o.px,dv/100*0.12,mulberry(hash(sym)));
@@ -558,8 +558,9 @@ IDXL.forEach(o=>{
 
 /* ---------- state ---------- */
 let sel='SPX',view='markets',range='1D',moverMode='up',secF='All',sortK='cap',sortD=-1,hovering=false;
-let WL=['AAPL','NVDA','MSFT','TSLA','AMZN','CEG','LLY','JPM'];
+let WL=['AAPL','NVDA','MSFT','TSLA','AMZN','MU','LLY','JPM'];
 try{const w=JSON.parse(localStorage.getItem('td-wl')||'null');if(Array.isArray(w))WL=w.filter(x=>M[x])}catch(e){}
+WL=WL.filter(x=>M[x]);
 const saveWL=()=>{try{localStorage.setItem('td-wl',JSON.stringify(WL))}catch(e){}};
 
 /* ---------- sparkline ---------- */
@@ -908,6 +909,7 @@ function applySnap(o,sn){
   const p=sn.latestTrade.p,pc=sn.prevDailyBar.c;
   if(!o.live){o.hist=[p,p];o.hi=o.lo=o.open=p;o.live=true}
   o.prev=pc;o.px=p;o.chg=(p/pc-1)*100;o.d=p-pc;
+  if(o.kind==='stock')o.cap=o.cap0*p/o.px0;
   const db=sn.dailyBar;
   if(db){o.open=db.o;o.hi=db.h;o.lo=db.l;if(o.kind==='stock')o.volM=db.v/1e6}
   else{if(p>o.hi)o.hi=p;if(p<o.lo)o.lo=p}
@@ -939,8 +941,8 @@ function enterLive(data){
   if(!M[sel])sel=IDXL.length?IDXL[0].sym:stocks[0].sym;
   applyAll(data);
   buildStrip();layoutHeat();
-  $('#heatNote').textContent=`${stocks.length} large US companies. Prices are live; tile area uses approximate market caps. Color shows today’s move.`;
-  $('#about').textContent=`Prices come from Alpaca’s ${LIVE.feed.toUpperCase()} feed through your own key, refreshed every second. ${LIVE.feed==='iex'?'IEX is one exchange, so last-trade prices and volume can differ slightly from the consolidated tape. The SIP feed covers every US exchange and needs a paid plan. ':''}Index tiles use the SPY, QQQ, DIA and IWM ETFs because the feed carries no index levels. Market caps are approximate, and the VIX, Treasury yield and sector year-to-date figures are hidden because they have no live source here. The Wire list is dated headlines, not a live news feed. Do not trade on this page.`;
+  $('#heatNote').textContent=`${stocks.length} large US companies. Prices are live; tile area uses market caps from an Oct 12, 2026 snapshot, scaled by each live price. Color shows today’s move.`;
+  $('#about').textContent=`Prices come from Alpaca’s ${LIVE.feed.toUpperCase()} feed through your own key, refreshed every second. ${LIVE.feed==='iex'?'IEX is one exchange, so last-trade prices and volume can differ slightly from the consolidated tape. The SIP feed covers every US exchange and needs a paid plan. ':''}Index tiles use the SPY, QQQ, DIA and IWM ETFs because the feed carries no index levels. Market caps come from an Oct 12, 2026 snapshot scaled by each live price, and the VIX, Treasury yield and sector year-to-date figures are hidden because they have no live source here. The Wire list is dated headlines, not a live news feed. Do not trade on this page.`;
   setChip('live');
   $('#liveBtn').textContent='Live settings';
   liveTimer=setInterval(pollLive,1000);
