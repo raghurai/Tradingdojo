@@ -4,7 +4,7 @@ A market terminal in Apple's design language. One static `index.html`, no build 
 
 - **Markets:** index strip, interactive chart, cap-weighted heatmap, sector bars, watchlist, movers.
 - **Screener:** sortable, filterable table of the 100 largest US companies.
-- **Trending:** stocks trending on social media (mentions counted by [ApeWisdom](https://apewisdom.io/), mainly Reddit) and the busiest options contracts on those tickers (Cboe's public delayed quotes, about 15 minutes behind). Ranked by volume, or by volume against open interest ("unusual").
+- **Trending:** stocks trending on social media (mentions counted by [ApeWisdom](https://apewisdom.io/), mainly Reddit) and the 40 highest-volume options contracts across the most heavily traded underlyings plus the social tickers (Cboe's public delayed quotes, about 15 minutes behind). Ranked by volume only, any expiry, so long-dated contracts count.
 
 ## Data modes
 
@@ -20,7 +20,7 @@ The Trending view is not simulated, but it is not real time either: social menti
 
 ## Trending snapshot
 
-If a browser blocks a request to ApeWisdom or Cboe, the page falls back to `data/social.json` and `data/options/*.json`. The workflow in `.github/workflows/trending-snapshot.yml` refreshes them every 15 minutes (GitHub may delay scheduled runs). Snapshots older than 3 hours are ignored.
+Browsers cannot call Cboe directly, so the options list always reads `data/options.json`. The social list tries ApeWisdom first and falls back to `data/social.json`. The workflow in `.github/workflows/trending-snapshot.yml` refreshes them every 15 minutes (GitHub may delay scheduled runs). Snapshots older than 3 hours are ignored.
 
 ## Hosting
 

@@ -425,12 +425,13 @@ footer a:hover{text-decoration:underline}
       <div class="p-head"><h2>Hot options contracts</h2>
         <div class="tools2"><span class="muted" id="trOptAge"></span>
           <div class="seg sm" id="optSeg" role="tablist" aria-label="Options ranking">
-            <button role="tab" data-o="vol" aria-selected="true">Most active</button>
-            <button role="tab" data-o="unusual" aria-selected="false">Unusual</button>
+            <button role="tab" data-o="all" aria-selected="true">All</button>
+            <button role="tab" data-o="C" aria-selected="false">Calls</button>
+            <button role="tab" data-o="P" aria-selected="false">Puts</button>
           </div>
         </div>
       </div>
-      <p class="tr-note">Social sites don't publish chatter by contract, so this lists the busiest contracts on the most-mentioned tickers. Most active ranks by volume today. Unusual keeps contracts trading at least as much as their open interest, with a minimum of 300 contracts. Quotes come from Cboe's public feed and run about 15 minutes behind.</p>
+      <p class="tr-note">The 40 highest-volume option contracts today across the most heavily traded underlyings and the tickers trending on social, any expiry and any strike, so long-dated contracts count. Ranked by volume only. Quotes come from Cboe's public feed, about 15 minutes behind, and the list refreshes about every 15 minutes.</p>
       <div class="tbl-wrap"><table class="tr"><thead><tr>
         <th><button class="ns" type="button" tabindex="-1">Contract</button></th>
         <th><button class="ns" type="button" tabindex="-1">Expires</button></th>
@@ -1012,7 +1013,7 @@ liveForm.addEventListener('submit',e=>{
 });
 
 /* ---------- trending: social chatter and hot options ---------- */
-const TR={soc:null,opt:null,px:{},mode:'vol',timer:null,busy:{s:false,o:false},err:{s:'',o:''},tryS:0,tryO:0};
+const TR={soc:null,opt:null,px:{},mode:'all',timer:null,busy:{s:false,o:false},err:{s:'',o:''},tryS:0,tryO:0};
 async function getJ(url,file){
   try{
     const r=await fetch(url,{cache:'no-store'});
@@ -1048,35 +1049,23 @@ async function loadSocial(){
   TR.busy.s=false;renderSocial();
 }
 async function loadOptions(){
-  if(TR.busy.o||!TR.soc)return;TR.busy.o=true;TR.tryO=Date.now();
+  if(TR.busy.o)return;TR.busy.o=true;TR.tryO=Date.now();
   try{
-    const cands=TR.soc.rows.map(r=>r.ticker).filter(t=>/^[A-Z]{1,5}$/.test(t)).slice(0,14);
-    const got=[];let i=0;
-    const worker=async()=>{
-      while(i<cands.length&&got.length<6){
-        const t=cands[i++];
-        try{const g=await getJ('https://cdn.cboe.com/api/global/delayed_quotes/options/'+t+'.json','data/options/'+t+'.json');got.push({t,...g})}catch(e){}
-      }
-    };
-    await Promise.all([worker(),worker(),worker()]);
-    got.sort((a,b)=>cands.indexOf(a.t)-cands.indexOf(b.t));
+    const r=await fetch('data/options.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('options snapshot '+r.status);
+    const j=await r.json(),at=j.fetched_at?Date.parse(j.fetched_at):0;
+    if(!at||Date.now()-at>3*3600e3)throw new Error('options snapshot is stale');
     const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
-    const rows=[];let via='direct',ts='',at=Date.now();
-    for(const g of got){
-      if(g.via==='snapshot'){via='snapshot';at=Math.min(at,g.at)}
-      ts=g.j.timestamp||ts;
-      const per=[];
-      for(const o of (g.j.data&&g.j.data.options)||[]){
-        const m=/^(.+?)(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/.exec(o.option||o.symbol||'');
-        if(!m||!(o.volume>0))continue;
-        const exp='20'+m[2]+'-'+m[3]+'-'+m[4];
-        if(exp<today)continue;
-        per.push({und:g.t,exp,type:m[5],strike:+m[6]/1000,last:o.last_trade_price,chg:o.percent_change,vol:o.volume,oi:o.open_interest,iv:o.iv,delta:o.delta});
-      }
-      per.sort((a,b)=>b.vol-a.vol);rows.push(...per.slice(0,60));
+    const rows=[];
+    for(const o of j.contracts||[]){
+      const m=/^(.+?)(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/.exec(o.option||'');
+      if(!m||!(o.vol>0))continue;
+      const exp='20'+m[2]+'-'+m[3]+'-'+m[4];
+      if(exp<today)continue;
+      rows.push({und:o.und,exp,type:m[5],strike:+m[6]/1000,last:o.last,chg:o.chg,vol:o.vol,oi:o.oi,iv:o.iv,delta:o.delta});
     }
-    if(!rows.length)throw new Error('no contracts came back');
-    TR.opt={rows,via,at,ts,tickers:got.map(g=>g.t)};TR.err.o='';
+    if(!rows.length)throw new Error('no contracts in the snapshot');
+    TR.opt={rows,at,ts:j.timestamp||'',n:new Set(rows.map(r=>r.und)).size};TR.err.o='';
   }catch(e){TR.err.o=e.message}
   TR.busy.o=false;renderOptions();
 }
@@ -1107,15 +1096,12 @@ function renderOptions(){
   const body=$('#trOptBody'),msg=$('#trOptMsg');
   if(!TR.opt){
     body.innerHTML='';msg.hidden=false;
-    msg.textContent=TR.err.o?'Could not load options data ('+TR.err.o+'). The source may block browser requests. Try Refresh in a minute.':(TR.soc?'Loading options chains…':'Waiting for the social list…');
+    msg.textContent=TR.err.o?'Could not load options data ('+TR.err.o+'). The snapshot refreshes about every 15 minutes, so try again shortly.':'Loading options…';
     return;
   }
   msg.hidden=true;
-  let rows=TR.opt.rows.map(r=>({...r,ratio:r.oi>0?r.vol/r.oi:Infinity}));
-  if(TR.mode==='vol')rows.sort((a,b)=>b.vol-a.vol);
-  else rows=rows.filter(r=>r.vol>=300&&r.ratio>=1).sort((a,b)=>a.ratio===b.ratio?b.vol-a.vol:b.ratio-a.ratio);
-  rows=rows.slice(0,25);
-  if(!rows.length){body.innerHTML='';msg.hidden=false;msg.textContent='No contracts meet this filter right now.';renderAges();return}
+  const rows=TR.opt.rows.filter(r=>TR.mode==='all'||r.type===TR.mode).sort((a,b)=>b.vol-a.vol).slice(0,40).map(r=>({...r,ratio:r.oi>0?r.vol/r.oi:Infinity}));
+  if(!rows.length){body.innerHTML='';msg.hidden=false;msg.textContent='No contracts to show.';renderAges();return}
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'});
   body.innerHTML=rows.map(r=>{
     const d=new Date(r.exp+'T12:00:00'),dte=Math.round((new Date(r.exp+'T12:00:00')-new Date(today+'T12:00:00'))/864e5);
@@ -1133,12 +1119,12 @@ function renderOptions(){
 }
 function renderAges(){
   if(TR.soc)$('#trSocAge').textContent='Updated '+ago(TR.soc.at)+(TR.soc.via==='snapshot'?' · GitHub snapshot':'');
-  if(TR.opt)$('#trOptAge').textContent='About 15 min delayed · fetched '+ago(TR.opt.at)+(TR.opt.via==='snapshot'?' · GitHub snapshot':'')+' · '+TR.opt.tickers.join(', ');
+  if(TR.opt)$('#trOptAge').textContent='About 15 min delayed · snapshot '+ago(TR.opt.at)+' · '+TR.opt.n+' underlyings';
 }
 function trTick(){
   const now=Date.now();
-  if((!TR.soc||now-TR.soc.at>60000)&&now-TR.tryS>55000)loadSocial().then(()=>{if((!TR.opt||now-TR.opt.at>300000)&&Date.now()-TR.tryO>60000)loadOptions()});
-  else if((!TR.opt||now-TR.opt.at>300000)&&now-TR.tryO>60000)loadOptions();
+  if((!TR.soc||now-TR.soc.at>60000)&&now-TR.tryS>55000)loadSocial();
+  if((!TR.opt||now-TR.opt.at>300000)&&now-TR.tryO>60000)loadOptions();
   renderAges();
 }
 function startTrending(){
